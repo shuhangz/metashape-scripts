@@ -40,6 +40,8 @@ def render_image(source_data, sensor_type, result_width_px, result_height_px, ce
 
     if (source_data == Metashape.DataSource.ModelData):
         chunk.model.renderImage(transform, calibration).save(result_path)
+    elif (source_data == Metashape.DataSource.TiledModelData):
+        chunk.tiled_model.renderImage(transform, calibration).save(result_path)
     elif (source_data == Metashape.DataSource.PointCloudData):
         chunk.point_cloud.renderImage(transform, calibration, point_size=4).save(result_path)
     elif (source_data == Metashape.DataSource.TiePointsData):
@@ -60,6 +62,7 @@ class RenderImageDlg(QtWidgets.QDialog):
 
         self.sourceDataCmb = QtWidgets.QComboBox()
         self.sourceDataCmb.addItem("Model")
+        self.sourceDataCmb.addItem("Tiled model")
         self.sourceDataCmb.addItem("Point cloud")
         self.sourceDataCmb.addItem("Tie points")
 
@@ -123,6 +126,8 @@ class RenderImageDlg(QtWidgets.QDialog):
 
         if source_txt == "Model":
             source_data = Metashape.DataSource.ModelData
+        if source_txt == "Tiled model":
+            source_data = Metashape.DataSource.TiledModelData
         elif source_txt == "Point cloud":
             source_data = Metashape.DataSource.PointCloudData
         elif source_txt == "Tie points":
@@ -144,6 +149,10 @@ class RenderImageDlg(QtWidgets.QDialog):
                 raise Exception("Null model")
             if (model.getActiveTexture() == None):
                 raise Exception("Model has no texture")
+
+        if (source_data == Metashape.DataSource.TiledModelData):
+            if (chunk.tiled_model == None):
+                raise Exception("Null tiled model")
 
         if (source_data == Metashape.DataSource.PointCloudData):
             if (chunk.point_cloud == None):
