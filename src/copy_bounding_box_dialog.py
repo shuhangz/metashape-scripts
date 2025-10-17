@@ -6,10 +6,17 @@ import Metashape
 from PySide2 import QtGui, QtCore, QtWidgets
 
 # Checking compatibility
+<<<<<<< Updated upstream
 compatible_major_version = "2.2"
 found_major_version = ".".join(Metashape.app.version.split('.')[:2])
 if found_major_version != compatible_major_version:
     raise Exception("Incompatible Metashape version: {} != {}".format(found_major_version, compatible_major_version))
+=======
+# compatible_major_version = "2.0"
+# found_major_version = ".".join(Metashape.app.version.split('.')[:2])
+# if found_major_version != compatible_major_version:
+#     raise Exception("Incompatible Metashape version: {} != {}".format(found_major_version, compatible_major_version))
+>>>>>>> Stashed changes
 
 
 class CopyBoundingBoxDlg(QtWidgets.QDialog):
