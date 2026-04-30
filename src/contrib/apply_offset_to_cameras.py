@@ -73,7 +73,7 @@ def apply_offset_to_chunk_transform(chunk, offset):
 
     transform = chunk.transform.matrix
     if transform is None:
-        return cloud_labels
+        return []
 
     shift = offset
     if chunk.crs:
@@ -123,8 +123,11 @@ def apply_xyz_offset():
         nmarkers = apply_offset_to_references(chunk.markers, offset)
         shifted_clouds = apply_offset_to_chunk_transform(chunk, offset)
 
-    print("Offset dx={}, dy={}, dz={} applied successfully to {} cameras, {} markers; shifted cloud assets: {}".format(
-        offset_x, offset_y, offset_z, ncameras, nmarkers, ", ".join(shifted_clouds) if shifted_clouds else "none"))
+    cloud_summary = ", ".join(shifted_clouds) if shifted_clouds else "none"
+    print(
+        f"Offset dx={offset_x}, dy={offset_y}, dz={offset_z} applied successfully to "
+        f"{ncameras} cameras, {nmarkers} markers; shifted cloud assets: {cloud_summary}"
+    )
 
 
 label = "Scripts/Add reference offset"
