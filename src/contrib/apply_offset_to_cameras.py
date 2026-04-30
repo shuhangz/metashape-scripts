@@ -36,6 +36,8 @@ def get_input(axis_name):
 
 
 def add_offset(coord, offset):
+    if coord is None:
+        return None
     return Metashape.Vector([coord.x + offset.x, coord.y + offset.y, coord.z + offset.z])
 
 
@@ -58,7 +60,7 @@ def apply_offset_to_references(items, offset):
 
 def get_cloud_asset_labels(chunk):
     labels = []
-    if chunk.point_cloud:
+    if getattr(chunk, "point_cloud", None):
         labels.append("point cloud")
     if getattr(chunk, "dense_cloud", None):
         labels.append("dense cloud")
@@ -118,7 +120,7 @@ def apply_xyz_offset():
     nmarkers = 0
     shifted_clouds = []
     if only_selected:
-        print("camera selection detected - marker references and cloud assets were not shifted")
+        print("Camera selection detected - marker references and cloud assets were not shifted")
     else:
         nmarkers = apply_offset_to_references(chunk.markers, offset)
         shifted_clouds = apply_offset_to_chunk_transform(chunk, offset)
