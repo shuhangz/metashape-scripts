@@ -35,6 +35,49 @@ def get_input(axis_name):
     return offset
 
 
+def add_offset(coord, offset):
+    return Metashape.Vector([coord.x + offset.x, coord.y + offset.y, coord.z + offset.z])
+
+
+def get_cartesian_crs(crs):
+    cartesian_crs = crs.geoccs
+    if cartesian_crs is None:
+        cartesian_crs = Metashape.CoordinateSystem("LOCAL")
+    return cartesian_crs
+
+
+def apply_offset_to_references(items, offset):
+    count = 0
+    for item in items:
+        if item.reference.location:
+            item.reference.location = add_offset(item.reference.location, offset)
+            count += 1
+    return count
+
+
+def apply_offset_to_chunk_transform(chunk, offset):
+    has_point_cloud = bool(chunk.point_cloud)
+    has_dense_cloud = bool(getattr(chunk, "dense_cloud", None))
+
+    if not (has_point_cloud or has_dense_cloud):
+        return 0
+
+    transform = chunk.transform.matrix
+    if transform is None:
+        return 0
+
+    shift = offset
+    if chunk.crs:
+        cartesian_crs = get_cartesian_crs(chunk.crs)
+        origin = transform.translation()
+        origin_coord = Metashape.CoordinateSystem.transform(origin, cartesian_crs, chunk.crs)
+        shifted_origin = Metashape.CoordinateSystem.transform(add_offset(origin_coord, offset), chunk.crs, cartesian_crs)
+        shift = shifted_origin - origin
+
+    chunk.transform.matrix = Metashape.Matrix.Translation(shift) * transform
+    return int(has_point_cloud) + int(has_dense_cloud)
+
+
 def apply_xyz_offset():
     doc = Metashape.app.document
     chunk = doc.chunk
@@ -58,16 +101,21 @@ def apply_xyz_offset():
     if offset_z is None:
         return
 
-    ncameras = 0
-    for camera in chunk.cameras:
-        if only_selected and not camera.selected:
-            continue
-        if camera.reference.location:
-            coord = camera.reference.location
-            camera.reference.location = Metashape.Vector(
-                [coord.x + offset_x, coord.y + offset_y, coord.z + offset_z])
-            ncameras += 1
-    print("Offset dx={}, dy={}, dz={} applied to {} cameras successfully".format(offset_x, offset_y, offset_z, ncameras))
+    offset = Metashape.Vector([offset_x, offset_y, offset_z])
+
+    cameras = [camera for camera in chunk.cameras if not only_selected or camera.selected]
+    ncameras = apply_offset_to_references(cameras, offset)
+
+    nmarkers = 0
+    nclouds = 0
+    if only_selected:
+        print("camera selection detected - markers and point/dense clouds were not shifted")
+    else:
+        nmarkers = apply_offset_to_references(chunk.markers, offset)
+        nclouds = apply_offset_to_chunk_transform(chunk, offset)
+
+    print("Offset dx={}, dy={}, dz={} applied successfully to {} cameras, {} markers and {} point/dense cloud assets".format(
+        offset_x, offset_y, offset_z, ncameras, nmarkers, nclouds))
 
 
 label = "Scripts/Add reference offset"
