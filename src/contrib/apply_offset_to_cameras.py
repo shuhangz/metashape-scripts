@@ -49,8 +49,9 @@ def get_cartesian_crs(crs):
 def apply_offset_to_references(items, offset):
     count = 0
     for item in items:
-        if item.reference.location:
-            item.reference.location = add_offset(item.reference.location, offset)
+        reference = getattr(item, "reference", None)
+        if reference and reference.location:
+            reference.location = add_offset(reference.location, offset)
             count += 1
     return count
 
