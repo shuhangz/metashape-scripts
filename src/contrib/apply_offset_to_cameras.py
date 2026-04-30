@@ -56,16 +56,24 @@ def apply_offset_to_references(items, offset):
     return count
 
 
-def apply_offset_to_chunk_transform(chunk, offset):
-    has_point_cloud = bool(chunk.point_cloud)
-    has_dense_cloud = bool(getattr(chunk, "dense_cloud", None))
+def get_cloud_asset_labels(chunk):
+    labels = []
+    if chunk.point_cloud:
+        labels.append("point cloud")
+    if getattr(chunk, "dense_cloud", None):
+        labels.append("dense cloud")
+    return labels
 
-    if not (has_point_cloud or has_dense_cloud):
-        return 0
+
+def apply_offset_to_chunk_transform(chunk, offset):
+    cloud_labels = get_cloud_asset_labels(chunk)
+
+    if not cloud_labels:
+        return cloud_labels
 
     transform = chunk.transform.matrix
     if transform is None:
-        return 0
+        return cloud_labels
 
     shift = offset
     if chunk.crs:
@@ -76,7 +84,7 @@ def apply_offset_to_chunk_transform(chunk, offset):
         shift = shifted_origin - origin
 
     chunk.transform.matrix = Metashape.Matrix.Translation(shift) * transform
-    return int(has_point_cloud) + int(has_dense_cloud)
+    return cloud_labels
 
 
 def apply_xyz_offset():
@@ -108,15 +116,15 @@ def apply_xyz_offset():
     ncameras = apply_offset_to_references(cameras, offset)
 
     nmarkers = 0
-    nclouds = 0
+    shifted_clouds = []
     if only_selected:
-        print("camera selection detected - markers and point/dense clouds were not shifted")
+        print("camera selection detected - marker references and cloud assets were not shifted")
     else:
         nmarkers = apply_offset_to_references(chunk.markers, offset)
-        nclouds = apply_offset_to_chunk_transform(chunk, offset)
+        shifted_clouds = apply_offset_to_chunk_transform(chunk, offset)
 
-    print("Offset dx={}, dy={}, dz={} applied successfully to {} cameras, {} markers and {} point/dense cloud assets".format(
-        offset_x, offset_y, offset_z, ncameras, nmarkers, nclouds))
+    print("Offset dx={}, dy={}, dz={} applied successfully to {} cameras, {} markers; shifted cloud assets: {}".format(
+        offset_x, offset_y, offset_z, ncameras, nmarkers, ", ".join(shifted_clouds) if shifted_clouds else "none"))
 
 
 label = "Scripts/Add reference offset"
